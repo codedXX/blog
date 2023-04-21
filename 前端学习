@@ -1,2 +1,506 @@
-#学习
-的的
+如何实现垂直居中
+
+七种方式实现垂直居中
+
+- 如果 .parent 的 height 不写，你只需要 padding: 10px 0; 就能将 .child 垂直居中；
+- 如果 .parent 的 height 写死了，就很难把 .child 居中，以下是垂直居中的方法。 
+  忠告：能不写 height 就千万别写 height。
+  - table自带功能
+  - 100% 高度的 afrer before 加上 inline block
+这个方法还有一个优化版本
+  - div 装成 table
+  - margin-top -50%
+  - translate -50%
+  - absolute margin auto
+  - flex
+  - 还有其他方法，自己搜吧
+  
+
+
+
+CSS 选择器优先级如何确定？
+
+链接
+
+如果记不住，可以记下这三句话：
+
+- 选择器越具体，其优先级越高
+- 相同优先级，出现在后面的，覆盖前面的
+- 属性后面加 !important 的优先级最高，但是要少用
+
+
+
+如何清除浮动？
+
+两种方法
+
+- 方法一：给父元素加上 .clearfix
+      .clearfix:after{
+      	content: ''; 
+      	display: block;/*或者 table*/ 
+      	clear: both; 
+      	}
+      .clearfix{
+      	zoom: 1; /* IE 兼容*/ 
+      	}
+- 方法二：给父元素加上 overflow:hidden。
+
+
+
+
+
+JS的new做了什么？
+
+- 创建临时对象/新对象
+- 绑定原型
+- 指定 this = 临时对象
+- 执行构造函数
+- 返回临时对象
+
+链接
+
+
+
+
+
+手写节流throttle、防抖debounce
+
+    // 节流就是「技能冷却中」
+    const throttle = (fn, time) => { 
+      let 冷却中 = false
+      return (...args) => { 
+        if(冷却中) return
+        fn.call(undefined, ...args)
+        冷却中 = true
+        setTimeout(()=>{
+          冷却中 = false
+        }, time)
+      }
+    }
+    // 还有一个版本是在冷却结束时调用 fn 
+    // 简洁版，删掉冷却中变量，直接使用 timer 代替
+    const throttle = (f, time) => {
+      let timer = null
+      return (...args) => {
+        if(timer) {return}
+        f.call(undefined, ...args)
+        timer = setTimeout(()=>{
+          timer = null 
+        }, time) 
+      } 
+    }
+
+使用方法：
+
+    const f = throttle(()=>{console.log('hi')}, 3000)
+    
+    f() // 打印 hi 
+    f() // 技能冷却中
+
+防抖：
+
+    // 防抖就是「回城被打断」 
+    const debounce = (fn, time) => { 
+    let 回城计时器 = null 
+    return (...args)=>{ 
+    if(回城计时器 !== null) { 
+    clearTimeout(回城计时器) // 打断回城 
+    }
+    // 重新回城 
+    回城计时器 = setTimeout(()=>{ 
+    fn.call(undefined, ...args) // 回城后调用 fn 
+    回城计时器 = null 
+    }, time) 
+    } 
+    }
+    
+
+
+
+手写发布订阅
+
+    const eventHub = { 
+    map: { 
+    // click: [f1 , f2] 
+    },
+    on: (name, fn)=>{ 
+    eventHub.map[name] = eventHub.map[name] || [] 
+    eventHub.map[name].push(fn) 
+    },
+    emit: (name, data)=>{ 
+    const q = eventHub.map[name] 
+    if(!q) return 
+    q.map(f => f.call(null, data)) 
+    return undefined 
+    },
+    off: (name, fn)=>{ 
+    const q = eventHub.map[name] 
+    if(!q){ return } 
+    const index = q.indexOf(fn) 
+    if(index < 0) { return } 
+    q.splice(index, 1) 
+    } 
+    }
+    
+    eventHub.on('click', console.log) 
+    eventHub.on('click', console.error) 
+    
+    setTimeout(()=>{ 
+    eventHub.emit('click', 'frank') 
+    },3000)
+    
+
+也可以用 class 实现。
+
+    class EventHub { 
+    map = {} 
+    on(name, fn) { 
+    this.map[name] = this.map[name] || [] 
+    this.map[name].push(fn) 
+    }
+    emit(name, data) { 
+    const fnList = this.map[name] || [] 
+    fnList.forEach(fn => fn.call(undefined, data)) 
+    }
+    off(name, fn) { 
+    const fnList = this.map[name] || [] 
+    const index = fnList.indexOf(fn) 
+    if(index < 0) return 
+    fnList.splice(index, 1) 
+    } 
+    }
+    // 使用 
+    const e = new EventHub() 
+    e.on('click', (name)=>{ 
+    console.log('hi '+ name) 
+    })
+    e.on('click', (name)=>{ 
+    console.log('hello '+ name) 
+    })
+    setTimeout(()=>{ 
+    e.emit('click', 'frank') 
+    },3000)
+    
+
+
+
+手写 AJAX
+
+    var xhr=new XMLHttpRequest()
+    
+    //要发到哪个地方,第三个参数是问你要用同步还是异步，默认异步
+    xhr.open('GET','/xxx')
+    /*
+    send()之后需要有一个回调，成功接收之后你要做什么
+    */
+    // xhr.onload=()=>{
+    //     console.log('得到内容')
+    // }
+    xhr.onreadystatechange = function () {
+         if(xhr.readyState === 4) {
+            //状态码在200以上300以下就说明成功了，304也代表成功，因为304代表内容没更改的意思。
+             if(xhr.status >= 200 && xhr.status < 300 || xhr.status === 304){
+                //成功就调用success，success是你定义好的一个回调
+                success(xhr)
+             }
+            else{
+                //成功就调用fail
+                fail(xhr) 
+            } 
+        } 
+    }; 
+    /*
+    设置好了方法和路径之后还要设置消息体:
+        Get的消息体是空的，传了也不发送
+        Post的请求体一般是传一个JSON数据，如xhr.send('{"name":"frank"}')
+    */
+    xhr.send('{"name":"frank"}')
+    
+
+
+
+手写简化版 Promise
+
+     class Promise2 { 
+    #status = 'pending' 
+    constructor(fn){ 
+    this.q = [] 
+    const resolve = (data)=>{ 
+    this.#status = 'fulfilled' 
+    const f1f2 = this.q.shift() 
+    if(!f1f2 || !f1f2[0]) return 
+    const x = f1f2[0].call(undefined, data) 
+    if(x instanceof Promise2) { 
+    x.then((data)=>{ 
+    resolve(data) 
+    }, (reason)=>{ 
+    reject(reason) 
+    }) 
+    }else { 
+    resolve(x) 
+    } 
+    }
+    const reject = (reason)=>{ 
+    this.#status = 'rejected' 
+    const f1f2 = this.q.shift() 
+    if(!f1f2 || !f1f2[1]) return 
+    const x = f1f2[1].call(undefined, reason) 
+    if(x instanceof Promise2){ 
+    x.then((data)=>{ 
+    resolve(data) 
+    }, (reason)=>{ 
+    reject(reason) 
+    }) 
+    }else{ 
+    resolve(x) 
+    } 
+    }
+    fn.call(undefined, resolve, reject) 
+    }
+    then(f1, f2){ 
+    this.q.push([f1, f2]) 
+    } 
+    }
+    const p = new Promise2(function(resolve, reject){ 
+    setTimeout(function(){ 
+    reject('出错') 
+    },3000)})
+    p.then( (data)=>{console.log(data)}, (r)=>{console.error(r)} )
+    
+
+
+
+手写 Promise.all
+
+要点
+
+- 知道要在 Promise 上写而不是在原型上写
+- 知道 all 的参数（Promise 数组）和返回值（新 Promise 对象）
+- 知道用数组来记录结果
+- 知道只要有一个 reject 就整体 reject
+
+    //Promise.prototype.myAll 
+    Promise.myAll = function(list){
+    const results = [] 
+    let count = 0 
+    return new Promise((resolve,reject) =>{ 
+    list.map((item, index)=> { 
+    item.then(result=>{ 
+    results[index] = result 
+    count += 1 
+    if (count >= list.length) { resolve(results)} 
+    }, reason => reject(reason) ) 
+    }) 
+    }) 
+    }
+    
+
+
+
+手写深拷贝
+
+方法一，用 JSON： 
+
+    const b = JSON.parse(JSON.stringify(a))
+
+缺点
+
+- 不支持 Date、正则、undefined、函数等数据
+- 不支持引用（即环状结构）
+
+
+
+方法二，用递归：
+
+要点：
+
+- 递归
+- 判断类型
+- 检查环
+- 不拷贝原型上的属性
+
+    const deepClone = (a, cache) => { 
+    
+    if(!cache){ 
+    
+    cache = new Map() // 缓存不能全局，最好临时创建并递归传递 
+    
+    }
+    
+    if(a instanceof Object) { // 不考虑跨 iframe 
+    
+    if(cache.get(a)) { return cache.get(a) } 
+    
+    let result 
+    
+    if(a instanceof Function) { 
+    
+    if(a.prototype) { // 有 prototype 就是普通函数 
+    
+    result = function(){ return a.apply(this, arguments) } 
+    
+    } else { 
+    
+    result = (...args) => { return a.call(undefined, ...args) } 
+    
+    } 
+    
+    } else if(a instanceof Array) { 
+    
+    result = [] 
+    
+    } else if(a instanceof Date) { 
+    
+    result = new Date(a - 0) 
+    
+    } else if(a instanceof RegExp) { 
+    
+    result = new RegExp(a.source, a.flags) 
+    
+    } else { 
+    
+    result = {} 
+    
+    }
+    
+    cache.set(a, result) 
+    
+    for(let key in a) { 
+    
+    if(a.hasOwnProperty(key)){ 
+    
+    result[key] = deepClone(a[key], cache) 
+    
+    } 
+    
+    }
+    
+    return result 
+    
+    } else { 
+    
+    return a 
+    
+    } 
+    
+    }
+    
+    const a = { 
+    
+    number:1, bool:false, str: 'hi', empty1: undefined, empty2: null, 
+    
+    array: [ 
+    
+    {name: 'frank', age: 18}, 
+    
+    {name: 'jacky', age: 19} 
+    
+    ],
+    
+    date: new Date(2000,0,1,20,30,0), 
+    
+    regex: /.(j|t)sx/i, 
+    
+    obj: { name:'frank', age: 18}, 
+    
+    f1: (a, b) => a + b, 
+    
+    f2: function(a, b) { return a + b }}
+    
+    a.self = a 
+    
+    const b = deepClone(a) 
+    
+    b.self === b // true 
+    
+    b.self = 'hi' 
+    
+    a.self !== 'hi' //true
+    
+
+
+
+手写数组去重
+
+- 使用计数排序的思路，缺点是只支持字符串
+- 使用 Set（面试已经禁止这种了，因为太简单）
+- 使用 Map，缺点是兼容性差了一点
+
+    var uniq = function(a){ 
+    
+    var map = new Map() 
+    
+    for(let i=0;i<a.length;i++){ 
+    
+    let number = a[i] // 1 ~ 3 
+    
+    if(number === undefined){continue} 
+    
+    if(map.has(number)){ 
+    
+    continue 
+    
+    }
+    
+    map.set(number, true) 
+    
+    }
+    
+    return [...map.keys()] 
+    
+    }
+    
+
+
+
+vue2
+
+生命周期
+
+为什么请求放在mounted里面，因为放弃他地方都不合适。如果放created就会执行两次，一次在后端SSR执行，另一次在前端执行，不符合我们的预期，这样写就不会影响SSR。mounted就不会在后端执行，这样做不会影响SSR。
+
+
+
+编译的意思是从一个语言到另一个语言
+
+我的话一般就是跟对象相关就用interface，跟对象不相关就用type
+
+
+
+
+
+比如说interface A，那么A就是确确实实存在的新的类型名。
+
+
+
+
+
+webpack 如何解决开发时的跨域问题？
+
+在开发时，我们的页面在 localhost:8080 ，JS 直接访问后端接口（如https://xiedaimala.com 或 http://localhost:3000 ）会报跨域错误。
+
+为了解决这个问题，可以在 webpack.config.js 中添加如下配置：
+
+    module.exports = { 
+    	//... 
+    	devServer: { 
+    		proxy: { 
+    			'/api': { 
+    			target: 'http://xiedaimala.com', 
+    			changeOrigin: true, 
+    			}, 
+    		}, 
+    		}, 
+    };
+
+此时，在 JS 中请求 /api/users 就会自动被代理到http://xiedaimala.com/api/users 。
+
+如果希望请求中的 Origin 从 8080 修改为 xiedaimala.com，可以添加 changeOrigin: true 。
+
+如果要访问的是 HTTPS API，那么就需要配置 HTTPS 证书，否则会报错。
+
+不过，如果在 target 下面添加 secure: false ，就可以不配置证书且忽略 HTTPS 报错。
+
+总之，记住常用选项就行了。
+
+
